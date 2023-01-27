@@ -53,50 +53,69 @@ coordinate then red.
 then yellow and if closer than 50 then red.
 • Type 2 objects: Green unless closer than 50 from the designated coordinate
 then yellow.*/
-int proximityCheck(int x, int y, int type){
+void categorizeTarget(struct newObject * obj){
     int distance;
-    //int array[4];
-    distance = sqrt(pow((x-150),2)+pow((y-150),2));
-    switch(type){
+    int array[4];
+    distance = sqrt(pow((obj->x-150),2)+pow((obj->y-150),2));
+    switch(obj->type){
         case 1:
             if(distance<50){
                 //red
-                printf("Type 1 target: code RED\n");
+                obj->color[0]=0x1B;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x31;
+                obj->color[3]=0x6D;
             }
             else if(distance<75 && distance > 50){
-                printf("Type 1 target: code YELLOW\n");
                 //yellow
+                obj->color[0]=0x1B;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x33;
+                obj->color[3]=0x6D;
             }
             else{
-                printf("Type 1 target: code GREEN\n");
-                //green    
+                //green 
+                obj->color[0]=0x1b;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x32;
+                obj->color[3]=0x6D;   
             }
             break;
         case 2:
             if(distance<50){
-                printf("Type 2 target: code YELLOW\n");
                 //yellow
+                obj->color[0]=0x1B;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x33;
+                obj->color[3]=0x6D;
             }
             else{
-                printf("Type 2 target: code GREEN\n");
-                //green    
+                //green 
+                obj->color[0]=0x1b;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x32;
+                obj->color[3]=0x6D;  
             }
             break;
         case 3:
             if(distance<100){
-                printf("Type 3 target: code RED\n");
                 //red
+                obj->color[0]=0x1B;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x31;
+                obj->color[3]=0x6D;
             }
             else{
-                printf("Type 3 target: code YELLOW\n");
-                //yellow  
+                //yellow
+                obj->color[0]=0x1B;
+                obj->color[1]=0x5B;
+                obj->color[2]=0x33;
+                obj->color[3]=0x6D;
             }
             break;
         default:
             printf("Incorrect type\n");
     }
-    
-    return distance;
 }
 
 char ** splitStringNewline(char * s){
@@ -174,37 +193,68 @@ int convertStrToInt(char * s){
     return num;
 }
 
-//createObjectStruct
+struct newObject * createObject(char ** s){
+    int size=0;
+    while(s[size] != NULL){
+        size++;
+    }
+    if( size != 4){
+        printf("Error creating struct, wrong dimensions of input\n");
+        return NULL;
+    }
+    struct newObject *object;
+    object = (struct newObject*)malloc(sizeof(struct newObject));
+    object->id = convertStrToLong(s[0]);
+    object->x = convertStrToInt(s[1]);
+    object->y = convertStrToInt(s[2]);
+    object->type = convertStrToInt(s[3]);
+    return object;
+}
+
+int countObjects(char *s){
+    if (s == NULL || strlen(s) < 1){
+        return 0;
+    }
+    int count=0;
+    int i=0;
+    while(s[i] != '\0'){
+        if(s[i] == '\n'){
+            count++;
+        }
+        i++;
+    }
+    return count;
+}
 
 
-void identifyObjects(char * s){
+struct newObject ** identifyObjects(char * s, int * count){
+    int nrObjects = 0;
+    nrObjects = countObjects(s);
+    *count = nrObjects;
+
+    if (nrObjects == 0){
+        printf("No objects detected\n");
+        return NULL;
+    }
+
+    struct newObject **objectStruct;
+    objectStruct = (struct newObject **)malloc((nrObjects+1)*sizeof(struct newObject *));
     char ** objectStr = NULL;
     char ** parameterStr = NULL;
     int i=0;
-    int distance;
 
     objectStr = splitStringNewline(s);//Fill objectStr with substrings divided by newline character.
 
     while(objectStr[i] != NULL){
-        struct newObject *object;
-        //(struct newObject*)malloc(sizeof(struct newObject))
-
         parameterStr = splitStringSemicolon(objectStr[i]);//Divide by semicolon
-
-        object->id = convertStrToLong(parameterStr[0]);
-        object->x = convertStrToInt(parameterStr[1]);
-        object->y = convertStrToInt(parameterStr[2]);
-        object->type = convertStrToInt(parameterStr[3]);
-        distance = proximityCheck(object->x, object->y, object->type);
+        objectStruct[i] = createObject(parameterStr);
         i++;
     }
     free(parameterStr);
     free(objectStr);
+    return objectStruct;
 }
-// Connect to the saab server.
-// argv[1] = 5463
-// argv[2] = 127.0.0.1
-// Example: ./connect.out 5463 127.0.0.1
+
 int main(int argc, char *argv[]){
     if (argc < 3){
        printf("not enough arguments\n");
@@ -217,12 +267,22 @@ int main(int argc, char *argv[]){
     while(1){
         bzero(buffer, buffer_size);
         n = recv(sockfd, buffer, buffer_size, 0);
-        int nrObj;
+        int count=0;
         if (n < 0){
             printf("Error reading server data\n");
             exit(0);
         }
-        identifyObjects(buffer);
+        struct newObject **objectStruct;
+        objectStruct = identifyObjects(buffer, &count);
+
+        if (objectStruct[0] != NULL){
+            for(int i=0; i<count; i++){
+                categorizeTarget(objectStruct[i]);
+            }
+        }
+        
+
+        free(objectStruct);
     }
     
     return 0;
