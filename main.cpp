@@ -72,8 +72,9 @@ void codeRed(int i){
     idCache[i].color[2]=0x31;
     idCache[i].color[3]=0x6D;
 }
-//Check distance from the reference (150,150) point change the objects color array accordingly.
-void categorizeTarget(){
+/*Check distance from the reference (150,150) point
+  Change the objects color array accordingly.*/
+void categorizeObjects(){
     int i=0;
     while(idCache[i].id != 0){
         int distance = sqrt(pow((idCache[i].x-150),2)+pow((idCache[i].y-150),2));
@@ -262,7 +263,7 @@ int main(int argc, char *argv[]){
             exit(0);
         }
         identifyObjects(buffer, &count);
-        categorizeTarget();
+        categorizeObjects();
         printf("%x ",preamble);
         printf("%i\n",count);
         int i=0;
