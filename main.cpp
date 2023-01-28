@@ -270,7 +270,6 @@ int main(int argc, char *argv[]){
         i=0;
         while(idCache[i].id != 0){
             printf("%li %i %i %i\n",idCache[i].id,idCache[i].x,idCache[i].y,idCache[i].type);
-            printf("Distance from target: %i\n",)
             i++;
         }
 
