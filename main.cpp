@@ -51,31 +51,28 @@ int initClient(char * portNumber, char * ipAdress){
     }
     return sockfd;
 }
-/*  Input one object and check distance from the reference point
-    change the objects color array accordingly.
-    Red:    0x1B, 0x5B, 0x31, 0x6D
-    Yellow: 0x1B, 0x5B, 0x33, 0x6D
-    Green:  0x1b, 0x5B, 0x32, 0x6D
-*/
+//Green:  0x1b, 0x5B, 0x32, 0x6D
 void codeGreen(int i){
     idCache[i].color[0]=0x1B;
     idCache[i].color[1]=0x5B;
     idCache[i].color[2]=0x32;
     idCache[i].color[3]=0x6D;
 }
+//Yellow: 0x1B, 0x5B, 0x33, 0x6D
 void codeYellow(int i){
     idCache[i].color[0]=0x1B;
     idCache[i].color[1]=0x5B;
     idCache[i].color[2]=0x33;
     idCache[i].color[3]=0x6D;
 }
+//Red:    0x1B, 0x5B, 0x31, 0x6D
 void codeRed(int i){
     idCache[i].color[0]=0x1B;
     idCache[i].color[1]=0x5B;
     idCache[i].color[2]=0x31;
     idCache[i].color[3]=0x6D;
 }
-
+//Check distance from the reference (150,150) point change the objects color array accordingly.
 void categorizeTarget(){
     int i=0;
     while(idCache[i].id != 0){
