@@ -25,7 +25,7 @@ struct newObject {
 struct newObject idCache[20];
 
 /* Initializing TCP/IP connection to the server SAAB.jar with SEVERPORT = 5463.
-   Example command line: ./saabKodProv.out 5463 127.0.0.1
+   Example command line: ./FILENAME.out 5463 127.0.0.1
  */
 int initClient(char * portNumber, char * ipAdress){
     int portno = atoi(portNumber);
@@ -33,12 +33,12 @@ int initClient(char * portNumber, char * ipAdress){
     struct hostent *server;
     struct sockaddr_in serv_addr;  
     if (sockfd < 0){
-        printf("error loading socket\n");
+        fprintf(stderr,"error loading socket\n");
         exit(0);
     }
     server = gethostbyname(ipAdress);
     if (server == NULL){
-        printf("error loading server\n");
+        fprintf(stderr,"error loading server\n");
         exit(0);
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -46,90 +46,84 @@ int initClient(char * portNumber, char * ipAdress){
     bcopy((char*) server->h_addr, (char*)&serv_addr.sin_addr.s_addr, server->h_length);
     serv_addr.sin_port = htons(portno);
     if(connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-        printf("error connecting to server\n");
+        fprintf(stderr,"error connecting to server\n");
+        exit(0);
     }
     return sockfd;
 }
-
 /*  Input one object and check distance from the reference point
     change the objects color array accordingly.
     Red:    0x1B, 0x5B, 0x31, 0x6D
     Yellow: 0x1B, 0x5B, 0x33, 0x6D
     Green:  0x1b, 0x5B, 0x32, 0x6D
-    Category 2 objects: Yellow unless closer than 100 from the designated
-    coordinate then red.
-    Type 1 objects: Green unless closer than 75 from the designated coordinate
-    then yellow and if closer than 50 then red.
-    Type 2 objects: Green unless closer than 50 from the designated coordinate
-    then yellow. 
 */
-void categorizeTarget(struct newObject obj){
-    int distance = sqrt(pow((obj.x-150),2)+pow((obj.y-150),2));
-    switch(obj.type){
-        case 1:
-            if(distance<50){
-                //red
-                obj.color[0]=0x1B;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x31;
-                obj.color[3]=0x6D;
-            }
-            else if(distance<75 && distance > 50){
-                //yellow
-                obj.color[0]=0x1B;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x33;
-                obj.color[3]=0x6D;
-            }
-            else{
-                //green 
-                obj.color[0]=0x1b;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x32;
-                obj.color[3]=0x6D;   
-            }
-            break;
-        case 2:
-            if(distance<50){
-                //yellow
-                obj.color[0]=0x1B;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x33;
-                obj.color[3]=0x6D;
-            }
-            else{
-                //green 
-                obj.color[0]=0x1b;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x32;
-                obj.color[3]=0x6D;  
-            }
-            break;
-        case 3:
-            if(distance<100){
-                //red
-                obj.color[0]=0x1B;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x31;
-                obj.color[3]=0x6D;
-            }
-            else{
-                //yellow
-                obj.color[0]=0x1B;
-                obj.color[1]=0x5B;
-                obj.color[2]=0x33;
-                obj.color[3]=0x6D;
-            }
-            break;
-        default:
-            fprintf(stderr, "Object has incorrect type\n");
-            obj.color[0]=0;
-            obj.color[1]=0;
-            obj.color[2]=0;
-            obj.color[3]=0;
-    }
+void codeGreen(int i){
+    idCache[i].color[0]=0x1B;
+    idCache[i].color[1]=0x5B;
+    idCache[i].color[2]=0x32;
+    idCache[i].color[3]=0x6D;
+}
+void codeYellow(int i){
+    idCache[i].color[0]=0x1B;
+    idCache[i].color[1]=0x5B;
+    idCache[i].color[2]=0x33;
+    idCache[i].color[3]=0x6D;
+}
+void codeRed(int i){
+    idCache[i].color[0]=0x1B;
+    idCache[i].color[1]=0x5B;
+    idCache[i].color[2]=0x31;
+    idCache[i].color[3]=0x6D;
 }
 
+void categorizeTarget(){
+    int i=0;
+    while(idCache[i].id != 0){
+        int distance = sqrt(pow((idCache[i].x-150),2)+pow((idCache[i].y-150),2));
+        switch(idCache[i].type){
+            /*Type 1 objects: Green unless closer than 75 from the designated coordinate
+              then yellow and if closer than 50 then red.*/
+            case 1:
+                if(distance<50){
+                    codeRed(i);
+                }
+                else if(distance<75 && distance > 50){
+                    codeYellow(i);
+                }
+                else{
+                    codeGreen(i); 
+                }
+                break;
+            /*Type 2 objects: Green unless closer than 50 from the designated coordinate
+              then yellow.*/
+            case 2:
+                if(distance<50){
+                    codeYellow(i);
+                }
+                else{
+                    codeGreen(i);
+                }
+                break;
+            /*Category 2 objects: Yellow unless closer than 100 from the designated
+              coordinate then red.*/
+            case 3:
+                if(distance<100){
+                    codeRed(i);
+                }
+                else{
+                    codeYellow(i);
+                }
+                break;
+            default:
+                fprintf(stderr, "Object type not in range (1-3)\n");
+                idCache[i].color[0]=0;
+                idCache[i].color[1]=0;
+                idCache[i].color[2]=0;
+                idCache[i].color[3]=0;
+        }
+        i++;
+    }
+}
 long convertStrToLong(char * s){
     if (s == NULL || strlen(s) < 1){
         return 0;
@@ -153,6 +147,20 @@ int convertStrToInt(char * s){
     return num;
 }
 
+long long int decimalToBinary(int num) {
+    long long int binNumber = 0;
+    int power = 0;
+    
+    while (num > 0) {
+        int rem = num % 2;
+        long long int temp = pow(10, power);
+        binNumber += rem * temp;
+        power++;
+        num /= 2;
+    }
+    
+    return binNumber;
+}
 char ** splitStringSemicolon(char * s){
     char * tmp= (char*)malloc(strlen(s)*sizeof(char));
     char * token = (char*)malloc(strlen(s)*sizeof(char));
@@ -199,7 +207,6 @@ char ** splitStringNewline(char * s){
     strArr[i] = NULL;
     return strArr;
 }
-
 void identifyObjects(char * s, int * n){
     char ** objectStr = NULL;
     char ** parameterStr = NULL;
@@ -238,10 +245,9 @@ void identifyObjects(char * s, int * n){
     free(objectStr);
     free(parameterStr);
 }
-
 int main(int argc, char *argv[]){
     if (argc < 3){
-       printf("not enough arguments\n");
+       fprintf(stderr,"Not enough arguments.\n");
        exit(0);
     }
     int sockfd = initClient(argv[1], argv[2]);
@@ -255,26 +261,23 @@ int main(int argc, char *argv[]){
         n = recv(sockfd, buffer, buffer_size, 0);
         int count=0;
         if (n < 0){
-            printf("Error reading server data\n");
+            fprintf(stderr,"Error reading server data.\n");
             exit(0);
         }
         identifyObjects(buffer, &count);
-
-        int i=0;
-        while(idCache[i].id != 0){
-            categorizeTarget(idCache[i]);
-            i++;
-        }
+        categorizeTarget();
         printf("%x ",preamble);
         printf("%i\n",count);
-        i=0;
+        int i=0;
         while(idCache[i].id != 0){
-            printf("%li %i %i %i\n",idCache[i].id,idCache[i].x,idCache[i].y,idCache[i].type);
+            printf("%li %i %i %i ",idCache[i].id,idCache[i].x,idCache[i].y,idCache[i].type);
+            for(int j=0; j<4; j++){
+                printf("%x ",idCache[i].color[j]);
+            }
+            printf("\n");
             i++;
         }
-
         usleep(1500000);
     }
-    
     return 0;
 }
